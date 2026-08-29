@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AppLockerPolicy Version="1">
+  <RuleCollection Type="Exe" EnforcementMode="AuditOnly">
+    <FilePathRule Id="44444444-4444-4444-8444-444444444444" Name="Unsupported child" Description="" UserOrGroupSid="S-1-1-0" Action="Allow">
+      <Conditions>
+        <FilePathCondition Path="%WINDIR%\*" />
+      </Conditions>
+      <FutureRuleAttribute Enabled="true" />
+    </FilePathRule>
+  </RuleCollection>
+  <RuleCollection Type="FutureCollection" EnforcementMode="Enabled" />
+</AppLockerPolicy>

@@ -1,0 +1,32 @@
+# Dependencies and build output
+node_modules/
+dist/
+build/
+*.zip
+*.tar.gz
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+coverage/
+.vite/
+
+# Local development state
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+
+# Editor and operating-system files
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+
+# Temporary test artifacts
+test-results/
+playwright-report/
+tmp/
+temp/

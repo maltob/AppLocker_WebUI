@@ -1,0 +1,6 @@
+{
+  "name": "truncated.dll",
+  "bytes": [77, 90, 0, 0, 60, 0, 0, 0],
+  "expectedFileType": "Dll",
+  "expectedHash": null
+}

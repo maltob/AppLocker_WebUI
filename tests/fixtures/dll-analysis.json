@@ -1,0 +1,6 @@
+{
+  "name": "signed-library.dll",
+  "expectedFileType": "Dll",
+  "expectedTargetCollection": "Dll",
+  "notes": "A valid PE DLL uses the Dll collection for generated hash and publisher rules."
+}

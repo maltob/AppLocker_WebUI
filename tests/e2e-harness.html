@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Policy Studio E2E harness</title>
+    <style>
+      :root { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; color: #18241f; background: #f4f6f5; }
+      body { max-width: 980px; margin: 0 auto; padding: 28px; }
+      h1 { font: 700 24px system-ui, sans-serif; margin: 0 0 8px; }
+      p { color: #69766f; font: 13px system-ui, sans-serif; }
+      #summary { padding: 12px; border: 1px solid #d9e2dc; border-radius: 8px; background: white; margin: 18px 0; }
+      #results { display: grid; gap: 8px; }
+      .result { background: white; border: 1px solid #d9e2dc; border-radius: 8px; padding: 11px 13px; }
+      .pass { border-color: #b9dcc5; background: #f3faf5; }.fail { border-color: #e7b8b1; background: #fff6f5; }
+      iframe { position: absolute; width: 1px; height: 1px; border: 0; opacity: 0; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <h1>Policy Studio end-to-end harness</h1>
+    <p>Runs real fixture files through the deployed browser parser and serializer. No policy data leaves this page.</p>
+    <div id="summary" role="status">Running checks…</div>
+    <div id="results"></div>
+    <iframe id="appFrame" title="Application under test" src="../index.html?test=1&harness=12"></iframe>
+    <script src="fixtures/msi-summary-fixture.js?v=2"></script>
+    <script src="fixtures/appx-fixture.js?v=1"></script>
+    <script src="e2e-harness.js?v=11"></script>
+  </body>
+</html>

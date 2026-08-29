@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f4f6f5" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; worker-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <title>Policy Studio · AppLocker</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="#main" aria-label="Policy Studio home">
+          <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+          <span>Policy Studio</span>
+        </a>
+        <div class="topbar-meta">
+          <span class="privacy-badge"><span class="dot"></span>Local only</span>
+          <span class="save-state" id="saveState">Saved locally</span>
+        </div>
+        <nav class="top-actions" aria-label="Policy actions">
+          <button class="button button-quiet" id="newPolicyButton" type="button">New</button>
+          <button class="button button-quiet" id="importButton" type="button">Import XML</button>
+          <button class="button button-quiet" id="compareButton" type="button">Compare</button>
+          <button class="button button-quiet" id="simulateButton" type="button">What-if</button>
+          <button class="button button-quiet" id="appControlButton" type="button">App Control review</button>
+          <button class="button button-primary" id="exportButton" type="button">Export XML <span aria-hidden="true">↗</span></button>
+          <input id="importInput" class="visually-hidden" type="file" accept=".xml,text/xml,application/xml" />
+          <input id="compareInput" class="visually-hidden" type="file" accept=".xml,text/xml,application/xml" />
+        </nav>
+      </header>
+
+      <main id="main" class="workspace">
+        <aside class="sidebar" aria-label="Policy navigation">
+          <div class="sidebar-heading">
+            <div>
+              <p class="eyebrow">Current policy</p>
+              <h1 id="policyTitle">Untitled policy</h1>
+            </div>
+            <button class="icon-button" id="renameButton" type="button" aria-label="Rename policy" title="Rename policy">✎</button>
+          </div>
+          <div class="policy-summary">
+            <div><strong id="ruleCount">0</strong><span>rules</span></div>
+            <div><strong id="collectionCount">1</strong><span>collections</span></div>
+            <div><strong id="warningCount">1</strong><span>review item</span></div>
+          </div>
+          <div class="sidebar-section">
+            <div class="section-label-row"><span class="section-label">Rule collections</span><button class="text-button" id="addCollectionButton" type="button">+ Add</button></div>
+            <div id="collectionList" class="collection-list"></div>
+          </div>
+          <div class="sidebar-footnote">
+            <span class="shield-icon" aria-hidden="true">◇</span>
+            <p>Files are inspected in your browser. Nothing is uploaded.</p>
+          </div>
+        </aside>
+
+        <section class="content" aria-labelledby="collectionTitle">
+          <div class="content-header">
+            <div>
+              <p class="eyebrow" id="collectionKicker">Rule collection</p>
+              <div class="title-row"><h2 id="collectionTitle">Executable files</h2><span class="type-pill" id="collectionType">EXE</span></div>
+              <p class="muted" id="collectionDescription">Control which .exe and .com files can run.</p>
+            </div>
+            <div class="mode-control">
+              <label for="enforcementMode">Mode</label>
+              <select id="enforcementMode">
+                <option value="AuditOnly">Audit only</option>
+                <option value="Enabled">Enforce rules</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="notice" id="auditNotice" role="status">
+            <span class="notice-icon" aria-hidden="true">i</span>
+            <div><strong>Audit first</strong><span>See what would be blocked before turning on enforcement.</span></div>
+            <button class="notice-close" id="dismissNotice" type="button" aria-label="Dismiss audit guidance">×</button>
+          </div>
+
+          <div class="toolbar">
+            <div class="toolbar-title"><span id="visibleRuleCount">0 rules</span><span class="separator">·</span><span class="muted">Applied to <span id="appliesTo">Everyone</span></span></div>
+            <div class="toolbar-actions">
+              <button class="button button-secondary" id="defaultRulesButton" type="button"><span aria-hidden="true">✦</span> Defaults</button>
+              <button class="button button-secondary" id="analyzeButton" type="button"><span aria-hidden="true">⌁</span> Analyze files</button>
+              <button class="button button-primary" id="addRuleButton" type="button"><span aria-hidden="true">+</span> Add rule</button>
+              <input id="fileInput" class="visually-hidden" type="file" multiple accept=".exe,.com,.dll,.msi,.msp,.mst,.appx,.msix,.appxbundle,.msixbundle,.ps1,.psm1,.psd1,.bat,.cmd,.vbs,.vbe,.js,.jse,.wsf,.wsh" />
+            </div>
+          </div>
+
+          <div id="ruleRegion" class="rule-region" aria-live="polite"></div>
+
+          <div class="review-card" id="reviewCard">
+            <div class="review-icon" aria-hidden="true">✓</div>
+            <div><strong>Ready for review</strong><p id="reviewText">Add a rule to start building this collection.</p></div>
+            <button class="text-button" id="reviewButton" type="button">Review policy <span aria-hidden="true">→</span></button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="ruleModal" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="ruleModalTitle">
+        <div class="modal-header"><div><p class="eyebrow">Rule editor</p><h2 id="ruleModalTitle">Add a rule</h2></div><button class="icon-button" data-close-modal type="button" aria-label="Close dialog">×</button></div>
+        <form id="ruleForm">
+          <div class="form-grid two-up">
+            <div class="field"><label for="ruleName">Rule name <span aria-hidden="true">*</span></label><input id="ruleName" name="name" required maxlength="120" placeholder="e.g. Allow Finance tools" /></div>
+            <div class="field"><label for="ruleAction">Action</label><select id="ruleAction" name="action"><option value="Allow">Allow</option><option value="Deny">Deny</option></select></div>
+          </div>
+          <div class="field"><label for="ruleDescription">Description</label><textarea id="ruleDescription" name="description" rows="2" maxlength="300" placeholder="Why does this rule exist?"></textarea></div>
+          <div class="form-grid two-up">
+            <div class="field"><label for="ruleKind">Condition</label><select id="ruleKind" name="kind"><option value="path">File path</option><option value="hash">File hash</option><option value="publisher">Publisher</option></select></div>
+            <div class="field"><label for="ruleSid">User or group SID</label><input id="ruleSid" name="sid" value="S-1-1-0" placeholder="S-1-1-0" /></div>
+          </div>
+          <fieldset class="condition-panel"><legend id="conditionLegend">Path condition</legend><div id="conditionFields"></div></fieldset>
+          <div class="modal-footer"><button class="button button-quiet" data-close-modal type="button">Cancel</button><button class="button button-primary" type="submit">Save rule</button></div>
+        </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="analysisModal" hidden>
+      <section class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="analysisTitle">
+        <div class="modal-header"><div><p class="eyebrow">Local file analysis</p><h2 id="analysisTitle">Review file identity</h2><p class="muted">Choose a file-derived rule to add to this collection.</p></div><button class="icon-button" data-close-modal type="button" aria-label="Close dialog">×</button></div>
+        <div id="analysisResults" class="analysis-results"></div>
+        <div class="modal-footer"><button class="button button-quiet" data-close-modal type="button">Done</button></div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="defaultsModal" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="defaultsTitle">
+        <div class="modal-header"><div><p class="eyebrow">Safe starting point</p><h2 id="defaultsTitle">Add default rules</h2><p class="muted" id="defaultsDescription">Choose the standard rules to add to this collection.</p></div><button class="icon-button" data-close-modal type="button" aria-label="Close dialog">×</button></div>
+        <fieldset class="default-options"><legend class="visually-hidden">Default rules</legend><div id="defaultRuleOptions"></div></fieldset>
+        <div class="modal-footer"><button class="button button-quiet" data-close-modal type="button">Cancel</button><button class="button button-primary" id="addDefaultsButton" type="button">Add selected rules</button></div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="reviewModal" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="reviewTitle">
+        <div class="modal-header"><div><p class="eyebrow">Before export</p><h2 id="reviewTitle">Policy review</h2></div><button class="icon-button" data-close-modal type="button" aria-label="Close dialog">×</button></div>
+        <div id="reviewResults" class="review-results"></div>
+        <div class="modal-footer"><button class="button button-quiet" data-close-modal type="button">Back to editor</button><button class="button button-secondary" id="downloadReportButton" type="button">Download report</button><button class="button button-primary" id="confirmExport" type="button">Export XML <span aria-hidden="true">↗</span></button></div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="simulateModal" hidden>
+      <section class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="simulateTitle">
+        <div class="modal-header"><div><p class="eyebrow">Policy simulation</p><h2 id="simulateTitle">What-if analysis</h2><p class="muted">Test a file identity against the current policy. Nothing is executed or sent anywhere.</p></div><button class="icon-button" data-close-modal type="button" aria-label="Close dialog">×</button></div>
+        <form id="simulateForm">
+          <div class="form-grid two-up">
+            <div class="field"><label for="simulatePath">File path</label><input id="simulatePath" placeholder="C:\\Program Files\\Contoso\\app.exe" /></div>
+            <div class="field"><label for="simulateCollection">Collection</label><select id="simulateCollection"></select></div>
+          </div>
+          <div class="form-grid two-up">
+            <div class="field"><label for="simulatePublisher">Publisher <span class="optional">optional</span></label><input id="simulatePublisher" placeholder="CN=Contoso Ltd" /></div>
+            <div class="field"><label for="simulateProduct">Product / binary <span class="optional">optional</span></label><input id="simulateProduct" placeholder="Product or binary name" /></div>
+          </div>
+          <div class="form-grid two-up">
+            <div class="field"><label for="simulateHash">Hash <span class="optional">optional</span></label><input id="simulateHash" placeholder="0x…" /></div>
+            <div class="field"><label for="simulateVersion">Version <span class="optional">optional</span></label><input id="simulateVersion" placeholder="1.2.3.4" /></div>
+          </div>
+          <div class="field"><label for="simulateSid">User or group SID</label><input id="simulateSid" value="S-1-1-0" placeholder="S-1-1-0" /></div>
+          <div id="simulateResults" class="review-results" aria-live="polite"><p class="muted">Enter a file identity and run the simulation.</p></div>
+          <div class="modal-footer"><button class="button button-quiet" data-close-modal type="button">Close</button><button class="button button-primary" type="submit">Run simulation</button></div>
+        </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="diffModal" hidden>
+      <section class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="diffTitle">
+        <div class="modal-header"><div><p class="eyebrow">Semantic comparison</p><h2 id="diffTitle">Compare policy</h2><p class="muted">Choose another AppLocker XML file. Your current policy stays unchanged.</p></div><button class="icon-button" data-close-modal type="button" aria-label="Close dialog">×</button></div>
+        <div id="diffResults" class="review-results"><p class="muted">Select a policy to compare.</p></div>
+        <div class="modal-footer"><button class="button button-quiet" data-close-modal type="button">Close</button><label class="button button-primary" for="compareInput">Choose XML</label></div>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="appControlModal" hidden>
+      <section class="modal modal-wide" role="dialog" aria-modal="true" aria-labelledby="appControlTitle">
+        <div class="modal-header"><div><p class="eyebrow">Migration readiness</p><h2 id="appControlTitle">App Control review</h2><p class="muted">A practical readiness check for moving this design toward Windows App Control / WDAC.</p></div><button class="icon-button" data-close-modal type="button" aria-label="Close dialog">×</button></div>
+        <div id="appControlResults" class="review-results"></div>
+        <div class="modal-footer"><button class="button button-quiet" data-close-modal type="button">Close</button><button class="button button-secondary" id="downloadAppControlButton" type="button">Download review</button></div>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <script src="app.js?v=18"></script>
+  </body>
+</html>

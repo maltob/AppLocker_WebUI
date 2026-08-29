@@ -1,0 +1,9 @@
+{
+  "name": "applocker-policy-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Browser-only AppLocker XML policy authoring tool",
+  "scripts": {
+    "test": "node tests/static-smoke.mjs"
+  }
+}

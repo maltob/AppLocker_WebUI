@@ -1,0 +1,54 @@
+name: Test and package
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Static checks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run tests
+        run: npm test
+
+  package:
+    name: Build ZIP artifact
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Assemble static site
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist/applocker-policy-studio
+          cp index.html styles.css app.js analysis-worker.js sw.js manifest.webmanifest .nojekyll dist/applocker-policy-studio/
+      - name: Create ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="applocker-policy-studio-${GITHUB_SHA::7}.zip"
+          (cd dist && zip -r "$archive" applocker-policy-studio)
+          echo "archive=dist/$archive" >> "$GITHUB_OUTPUT"
+        id: archive
+      - name: Upload ZIP artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: applocker-policy-studio-${{ github.sha }}
+          path: ${{ steps.archive.outputs.archive }}
+          if-no-files-found: error
+          retention-days: 14

@@ -1,0 +1,10 @@
+{
+  "name": "Policy Studio · AppLocker",
+  "short_name": "Policy Studio",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#f4f6f5",
+  "theme_color": "#2f6b53",
+  "description": "Local-first AppLocker XML policy authoring.",
+  "icons": []
+}

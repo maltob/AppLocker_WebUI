@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "description": "Manifest for Windows golden-result comparisons. Populate golden fields from disposable Windows test machines before enabling verified proposals.",
+  "entries": [
+    { "id": "unsigned-pe-exe", "fileType": "Exe", "source": "generated-or-licensed-fixture", "status": "pending-windows-golden", "goldenCommand": "Get-AppLockerFileInformation" },
+    { "id": "unsigned-pe-dll", "fileType": "Dll", "source": "generated-or-licensed-fixture", "status": "pending-windows-golden", "goldenCommand": "Get-AppLockerFileInformation" },
+    { "id": "signed-powershell", "fileType": "Script", "source": "generated-or-licensed-fixture", "status": "pending-windows-golden", "goldenCommand": "Get-AppLockerFileInformation" },
+    { "id": "installer-package", "fileType": "Msi", "source": "generated-or-licensed-fixture", "status": "pending-windows-golden", "goldenCommand": "Get-AppLockerFileInformation" }
+  ]
+}
