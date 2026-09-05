@@ -1,5 +1,20 @@
 # Policy Studio
 
+## Use it now
+
+Open the live static app: [maltob.github.io/AppLocker_WebUI](https://maltob.github.io/AppLocker_WebUI/)
+
+Everything runs in your browser. To get started:
+
+1. Choose AppLocker or WDAC / App Control in the policy-engine panel.
+2. Use **Analyze files** to inspect EXE, DLL, MSI, script, or AppX/MSIX metadata locally.
+3. Add rules from the analysis results, or create them manually.
+4. For WDAC, assign each rule to **User mode**, **Kernel mode**, or **Both**. FilePath rules are user-mode only.
+5. Review safety findings, then export XML. Validate WDAC XML with Windows tooling before deployment.
+
+Selected file bytes are not uploaded. Previously analyzed metadata can be reused from the local evidence library.
+
+
 Policy Studio is a browser-only AppLocker and WDAC/App Control XML authoring tool. It has no backend, does not upload selected files, and stores drafts in the browser's local storage.
 
 ## Run locally

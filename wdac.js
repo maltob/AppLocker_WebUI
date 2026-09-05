@@ -188,17 +188,18 @@
     option(policy.mode === 'enforce' ? 'Enabled:Enforce' : 'Enabled:Audit Mode');
     if (policy.scope !== 'kernel-only') option('Enabled:UMCI');
     var fileRules = element(doc, root, 'FileRules');
-    var refs = [];
+    var userRefs = [], kernelRefs = [];
+    function addRef(item, id) { var selected = item.scenario || (item.type === RULE_TYPES.FILE_PATH ? 'user' : 'user'); if (selected === 'user' || selected === 'both' || !selected) userRefs.push(id); if (selected === 'kernel' || selected === 'both') kernelRefs.push(id); }
     (policy.fileAttributes || []).forEach(function (item) {
       var id = item.id || uid('ID_FILEATTRIB', JSON.stringify(item));
       item.id = id;
-      refs.push(id);
+      addRef(item, id);
       element(doc, fileRules, 'FileAttrib', { ID: id, FriendlyName: item.friendlyName || item.originalFileName || item.fileName || 'File attribute', FileName: item.originalFileName || item.fileName, InternalName: item.internalName, ProductName: item.productName, FileDescription: item.fileDescription, MinimumFileVersion: item.minVersion, MaximumFileVersion: item.maxVersion });
     });
     (policy.rules || []).forEach(function (item) {
       if (item.type === RULE_TYPES.FILE_PATH) {
         var id = item.id || uid('ID_ALLOW_PATH', item.path);
-        item.id = id; refs.push(id);
+        item.id = id; addRef(item, id);
         element(doc, fileRules, 'Allow', { ID: id, FriendlyName: item.friendlyName || item.name || 'User-mode path', FilePath: item.path });
       } else if (item.type === RULE_TYPES.HASH) {
         var hashId = item.id || uid('ID_ALLOW_HASH', item.hash);
@@ -214,20 +215,20 @@
       if (item.certIssuer) element(doc, signer, 'CertIssuer', { Value: item.certIssuer });
     });
     var scenarios = element(doc, root, 'SigningScenarios');
-    function scenario(id, valueNumber, includeRefs) {
+    function scenario(id, valueNumber, includeRefs, refsForScenario) {
       var node = element(doc, scenarios, 'SigningScenario', { Value: valueNumber, ID: id });
       var products = element(doc, node, 'ProductSigners', {});
-      if (includeRefs && refs.length) {
+      if (includeRefs && refsForScenario.length) {
         var fileRefs = element(doc, products, 'FileRulesRef', {});
-        refs.forEach(function (ruleId) { element(doc, fileRefs, 'FileRuleRef', { RuleID: ruleId }); });
+        refsForScenario.forEach(function (ruleId) { element(doc, fileRefs, 'FileRuleRef', { RuleID: ruleId }); });
       }
       if (includeRefs && policy.signers && policy.signers.length) {
         var allowed = element(doc, products, 'AllowedSigners', {});
         policy.signers.forEach(function (signer) { element(doc, allowed, 'AllowedSigner', { SignerId: signer.id }); });
       }
     }
-    if (policy.scope !== 'kernel-only') scenario('ID_SIGNINGSCENARIO_USERMODE', '12', true);
-    if (policy.scope !== 'user-only') scenario('ID_SIGNINGSCENARIO_KERNELMODE', '131', false);
+    if (policy.scope !== 'kernel-only') scenario('ID_SIGNINGSCENARIO_USERMODE', '12', true, userRefs);
+    if (policy.scope !== 'user-only') scenario('ID_SIGNINGSCENARIO_KERNELMODE', '131', true, kernelRefs);
     return '<?xml version="1.0" encoding="utf-8"?>\n' + new XMLSerializer().serializeToString(doc);
   }
 
@@ -247,7 +248,7 @@
   function installUi() {
     if (!global.document || document.documentElement.dataset.wdacUi === 'installed') return;
     document.documentElement.dataset.wdacUi = 'installed';
-    var target = document.querySelector('[data-policy-engine]') || document.querySelector('main') || document.body;
+    var target = document.querySelector('[data-policy-engine]') || document.querySelector('.content') || document.querySelector('main') || document.body;
     if (!target) return;
     var panel = document.createElement('section'); panel.className = 'wdac-panel'; panel.setAttribute('aria-labelledby', 'wdac-heading');
     panel.innerHTML = '<div class="wdac-panel__header"><div><p class="eyebrow">Policy engine</p><h2 id="wdac-heading">WDAC / App Control</h2><p class="muted">Create device-wide policies with evidence-aware safety checks.</p></div><label class="field"><span>Engine</span><select id="wdac-engine"><option value="applocker">AppLocker</option><option value="wdac">WDAC / App Control</option></select></label></div><div id="wdac-controls" hidden><div class="wdac-grid"><label class="field"><span>Scope</span><select id="wdac-scope"><option value="user-and-kernel">User mode + kernel</option><option value="kernel-only">Kernel only</option></select></label><label class="field"><span>Mode</span><select id="wdac-mode"><option value="audit">Audit (recommended)</option><option value="enforce">Enforced</option></select></label><label class="field"><span>Rule type</span><select id="wdac-rule-type"><option value="hash">Hash</option><option value="file-attribute">File attributes</option><option value="file-publisher">File publisher</option><option value="leaf-certificate">Leaf certificate</option><option value="pca-certificate">PCA certificate</option><option value="file-path">User-mode file path</option></select></label></div><div class="wdac-callout" role="note"><strong>Safety checks enabled.</strong><span id="wdac-status">Choose evidence to validate ECC certificates, file attributes, and kernel path rules.</span></div></div>';
@@ -272,6 +273,8 @@
     actions.innerHTML = '<div class="wdac-action-row"><button type="button" class="button button-secondary" id="wdac-new">New WDAC policy</button><button type="button" class="button button-secondary" id="wdac-import">Import WDAC XML</button><button type="button" class="button button-secondary" id="wdac-add-attribute">Add file attribute</button><button type="button" class="button button-primary" id="wdac-export">Export WDAC XML</button><input id="wdac-import-input" class="visually-hidden" type="file" accept=".xml,text/xml,application/xml"></div><div id="wdac-attribute-list" class="wdac-attribute-list" aria-live="polite"></div>';
     controls.appendChild(actions);
     var state = window.WdacPolicy.createPolicy();
+    window.__policyStudioWdacGetState = function () { return state; };
+    window.__policyStudioWdacRefresh = function () { sync(); };
     var status = panel.querySelector('#wdac-status');
     var scope = panel.querySelector('#wdac-scope');
     var mode = panel.querySelector('#wdac-mode');
@@ -305,8 +308,13 @@
       state.scope = scope.value;
       state.mode = mode.value;
       list.innerHTML = state.fileAttributes.length ? state.fileAttributes.map(function (item, index) {
-        return '<div class="wdac-attribute"><strong>' + (item.originalFileName || item.fileName || 'Unnamed file') + '</strong><span>' + (item.productName || 'No product') + (item.minVersion ? ' · ' + item.minVersion : '') + '</span><button type="button" class="text-button" data-remove-attribute="' + index + '">Remove</button></div>';
+        var selectedScope = item.scenario || 'user';
+        var scopeOptions = '<option value="user"' + (selectedScope === 'user' ? ' selected' : '') + '>User mode</option><option value="kernel"' + (selectedScope === 'kernel' ? ' selected' : '') + '>Kernel mode</option><option value="both"' + (selectedScope === 'both' ? ' selected' : '') + '>Both scenarios</option>';
+        return '<div class="wdac-attribute"><div><strong>' + escapeHtml(item.originalFileName || item.fileName || 'Unnamed file') + '</strong><span>' + escapeHtml(item.productName || 'No product') + (item.minVersion ? ' · ' + escapeHtml(item.minVersion) : '') + '</span></div><label class="wdac-rule-scope"><span>Runs in</span><select data-rule-scope="' + index + '"' + (item.type === RULE_TYPES.FILE_PATH ? ' disabled' : '') + '>' + (item.type === RULE_TYPES.FILE_PATH ? '<option value="user" selected>User mode</option>' : scopeOptions) + '</select></label><button type="button" class="text-button" data-remove-attribute="' + index + '">Remove</button></div>';
       }).join('') : '<p class="muted">No file attributes yet. Add one from analyzed metadata or enter a verified attribute manually.</p>';
+      list.querySelectorAll('[data-rule-scope]').forEach(function (select) {
+        select.addEventListener('change', function () { var item = state.fileAttributes[Number(select.dataset.ruleScope)]; if (item) { item.scenario = select.value; sync(); } });
+      });
       list.querySelectorAll('[data-remove-attribute]').forEach(function (button) {
         button.addEventListener('click', function () { state.fileAttributes.splice(Number(button.dataset.removeAttribute), 1); sync(); });
       });
@@ -433,6 +441,7 @@
     section.setAttribute('aria-labelledby', 'wdac-library-title');
     section.innerHTML = '<div class="wdac-library-header"><div><h3 id="wdac-library-title">Local evidence library</h3><p class="muted">Metadata only—selected file bytes are never stored. Reuse previously analyzed files across policies.</p></div><button type="button" class="text-button" id="wdac-library-clear">Clear library</button></div><div id="wdac-library-list" aria-live="polite"></div>';
     controls.appendChild(section);
+    var libraryToggle = document.createElement('button'); libraryToggle.type = 'button'; libraryToggle.className = 'text-button wdac-library-toggle'; libraryToggle.textContent = 'Show local evidence library'; libraryToggle.setAttribute('aria-expanded', 'false'); controls.insertBefore(libraryToggle, section); section.hidden = true; libraryToggle.addEventListener('click', function () { section.hidden = !section.hidden; libraryToggle.textContent = section.hidden ? 'Show local evidence library' : 'Hide local evidence library'; libraryToggle.setAttribute('aria-expanded', String(!section.hidden)); });
     var list = section.querySelector('#wdac-library-list');
     function render() {
       var items = load();
@@ -469,4 +478,42 @@
     render();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installLibrary); else installLibrary();
+}());
+
+(function () {
+  'use strict';
+  function installRuleScopeList() {
+    var panel = document.querySelector('.wdac-panel');
+    var controls = panel && panel.querySelector('#wdac-controls');
+    if (!controls || controls.querySelector('#wdac-rule-scope-list') || !window.__policyStudioWdacGetState) return;
+    var section = document.createElement('section');
+    section.id = 'wdac-rule-scope-list';
+    section.className = 'wdac-rule-scope-list';
+    section.setAttribute('aria-labelledby', 'wdac-rule-scope-title');
+    section.innerHTML = '<div class="wdac-library-header"><div><h3 id="wdac-rule-scope-title">Rule execution scope</h3><p class="muted">Choose where each generated rule applies. FilePath rules remain user-mode only.</p></div></div><div id="wdac-rule-scope-items" aria-live="polite"></div>';
+    controls.insertBefore(section, controls.querySelector('.wdac-actions'));
+    var list = section.querySelector('#wdac-rule-scope-items');
+    function render() {
+      var state = window.__policyStudioWdacGetState();
+      var rules = state && state.rules || [];
+      list.innerHTML = rules.length ? rules.map(function (rule, index) {
+        var selected = rule.scenario || 'user';
+        var options = '<option value="user"' + (selected === 'user' ? ' selected' : '') + '>User mode</option><option value="kernel"' + (selected === 'kernel' ? ' selected' : '') + '>Kernel mode</option><option value="both"' + (selected === 'both' ? ' selected' : '') + '>Both scenarios</option>';
+        if (rule.type === 'file-path') options = '<option value="user" selected>User mode</option>';
+        return '<div class="wdac-rule-scope-row"><div><strong>' + String(rule.name || rule.type || 'WDAC rule').replace(/[&<>]/g, '') + '</strong><small>' + String(rule.type || '').replace(/[&<>]/g, '') + '</small></div><label class="wdac-rule-scope"><span>Runs in</span><select data-wdac-rule-scope="' + index + '"' + (rule.type === 'file-path' ? ' disabled' : '') + '>' + options + '</select></label></div>';
+      }).join('') : '<p class="muted">No hash or path rules yet. Reuse evidence from the analysis cards to add one.</p>';
+      list.querySelectorAll('[data-wdac-rule-scope]').forEach(function (select) {
+        select.addEventListener('change', function () {
+          var current = window.__policyStudioWdacGetState();
+          var rule = current.rules[Number(select.dataset.wdacRuleScope)];
+          if (rule) { rule.scenario = select.value; window.__policyStudioWdacRefresh(); }
+        });
+      });
+    }
+    render();
+    var attrList = controls.querySelector('#wdac-attribute-list');
+    if (attrList && window.MutationObserver) new MutationObserver(render).observe(attrList, { childList: true });
+    window.addEventListener('policy-studio:evidence', render);
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installRuleScopeList); else installRuleScopeList();
 }());
