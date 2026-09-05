@@ -21,6 +21,8 @@
           <span class="save-state" id="saveState">Saved locally</span>
         </div>
         <nav class="top-actions" aria-label="Policy actions">
+          <a class="button button-quiet workspace-switch is-active" href="index.html" aria-current="page">AppLocker</a>
+          <a class="button button-quiet workspace-switch" href="wdac-ui.html">WDAC</a>
           <button class="button button-quiet" id="newPolicyButton" type="button">New</button>
           <button class="button button-quiet" id="importButton" type="button">Import XML</button>
           <button class="button button-quiet" id="compareButton" type="button">Compare</button>
@@ -89,6 +91,11 @@
           </div>
 
           <div id="ruleRegion" class="rule-region" aria-live="polite"></div>
+
+          <section class="evidence-workspace" aria-labelledby="applocker-library-title">
+            <div class="wdac-library-header"><div><p class="eyebrow">Reusable evidence</p><h3 id="applocker-library-title">AppLocker library</h3><p class="muted">Build rules from files already analysed in this browser. Compatibility is shown for both policy engines.</p></div></div>
+            <div id="sharedEvidenceLibrary" data-library-engine="applocker" aria-live="polite"></div>
+          </section>
 
           <div class="review-card" id="reviewCard">
             <div class="review-icon" aria-hidden="true">✓</div>
@@ -181,8 +188,8 @@
       </section>
     </div>
 
-    <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=19"></script>
-    <script src="wdac.js"></script>
+    <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
+    <script src="compatibility.js"></script>
+    <script src="app.js?v=20"></script>
 </body>
 </html>

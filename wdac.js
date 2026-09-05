@@ -247,13 +247,15 @@
 
   function installUi() {
     if (!global.document || document.documentElement.dataset.wdacUi === 'installed') return;
+    if (!document.querySelector('[data-wdac-workspace]')) return;
     document.documentElement.dataset.wdacUi = 'installed';
-    var target = document.querySelector('[data-policy-engine]') || document.querySelector('.content') || document.querySelector('main') || document.body;
+    var target = document.querySelector('[data-wdac-workspace]');
     if (!target) return;
     var panel = document.createElement('section'); panel.className = 'wdac-panel'; panel.setAttribute('aria-labelledby', 'wdac-heading');
     panel.innerHTML = '<div class="wdac-panel__header"><div><p class="eyebrow">Policy engine</p><h2 id="wdac-heading">WDAC / App Control</h2><p class="muted">Create device-wide policies with evidence-aware safety checks.</p></div><label class="field"><span>Engine</span><select id="wdac-engine"><option value="applocker">AppLocker</option><option value="wdac">WDAC / App Control</option></select></label></div><div id="wdac-controls" hidden><div class="wdac-grid"><label class="field"><span>Scope</span><select id="wdac-scope"><option value="user-and-kernel">User mode + kernel</option><option value="kernel-only">Kernel only</option></select></label><label class="field"><span>Mode</span><select id="wdac-mode"><option value="audit">Audit (recommended)</option><option value="enforce">Enforced</option></select></label><label class="field"><span>Rule type</span><select id="wdac-rule-type"><option value="hash">Hash</option><option value="file-attribute">File attributes</option><option value="file-publisher">File publisher</option><option value="leaf-certificate">Leaf certificate</option><option value="pca-certificate">PCA certificate</option><option value="file-path">User-mode file path</option></select></label></div><div class="wdac-callout" role="note"><strong>Safety checks enabled.</strong><span id="wdac-status">Choose evidence to validate ECC certificates, file attributes, and kernel path rules.</span></div></div>';
     target.appendChild(panel);
     var engine = panel.querySelector('#wdac-engine'), controls = panel.querySelector('#wdac-controls'), scope = panel.querySelector('#wdac-scope'), rule = panel.querySelector('#wdac-rule-type'), status = panel.querySelector('#wdac-status');
+    engine.value = 'wdac'; engine.closest('label').hidden = true;
     function refresh() { var active = engine.value === 'wdac'; controls.hidden = !active; if (active && rule.value === 'file-path' && scope.value === 'kernel-only') status.textContent = 'Blocked: FilePath rules cannot authorize kernel-mode drivers.'; else status.textContent = active ? 'WDAC policies are device-wide. Audit mode is recommended for initial validation.' : ''; }
     engine.addEventListener('change', refresh); scope.addEventListener('change', refresh); rule.addEventListener('change', refresh); refresh();
   }

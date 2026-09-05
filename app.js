@@ -111,8 +111,9 @@
     document.querySelectorAll(".rule-meta").forEach((meta, index) => { const rule = rules[index]; if (rule) meta.textContent += " · " + provenanceLabel(rule); });
   }
 
-  function openModal(id) { $(id).hidden = false; activeModal = $(id); const focusable = activeModal.querySelector("input,select,textarea,button"); focusable?.focus(); }
-  function closeModal(modal = activeModal) { if (!modal) return; modal.hidden = true; activeModal = null; editingRuleId = null; }
+  function modalFocusables(modal) { return [...modal.querySelectorAll('a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')].filter(node => !node.hidden && node.getAttribute("aria-hidden") !== "true"); }
+  function openModal(id) { const modal = $(id); modal.dataset.returnFocusId = document.activeElement?.id || ""; modal.hidden = false; activeModal = modal; document.body.classList.add("modal-open"); (modalFocusables(modal)[0] || modal.querySelector(".modal"))?.focus(); }
+  function closeModal(modal = activeModal) { if (!modal) return; const returnTarget = modal.dataset.returnFocusId && $(modal.dataset.returnFocusId); modal.hidden = true; activeModal = null; editingRuleId = null; document.body.classList.remove("modal-open"); returnTarget?.focus(); }
   function openRuleModal(ruleId = null, preset = null) {
    editingRuleId = ruleId; const rule = ruleId ? currentCollection().rules.find(r => r.id === ruleId) : null;
     pendingRuleProvenance = preset?.provenance || null;
@@ -523,6 +524,11 @@
   }
   const analysisObserver = new MutationObserver(() => { decorateDllAnalysisCards(); decorateAppxAnalysisCards(); }); const analysisRoot = $("analysisResults"); if (analysisRoot) analysisObserver.observe(analysisRoot, { childList: true, subtree: true });
 
+ window.addEventListener("policy-studio:reuse-applocker", event => {
+   const { item, method } = event.detail || {};
+   if (method === "hash") addRuleFromFile(item);
+   else if (method === "publisher") addPublisherRuleFromFile(item);
+ });
  $("addRuleButton").addEventListener("click", () => openRuleModal());
   $("simulateButton")?.addEventListener("click", openSimulator);
   $("simulateForm")?.addEventListener("submit", event => { event.preventDefault(); const identity = { collection: $("simulateCollection").value, path: $("simulatePath").value.trim(), publisher: $("simulatePublisher").value.trim(), product: $("simulateProduct").value.trim(), binary: $("simulateProduct").value.trim(), hash: $("simulateHash").value.trim(), version: $("simulateVersion").value.trim(), sid: $("simulateSid").value.trim() || DEFAULT_SID }; renderSimulation(simulatePolicy(identity)); });
@@ -552,7 +558,7 @@
   $("dismissNotice").addEventListener("click", () => { sessionStorage.setItem("auditNoticeDismissed", "true"); $("auditNotice").hidden = true; });
   document.querySelectorAll("[data-close-modal]").forEach(button => button.addEventListener("click", () => closeModal(button.closest(".modal-backdrop"))));
   document.querySelectorAll(".modal-backdrop").forEach(backdrop => { backdrop.addEventListener("pointerdown", event => { backdrop.dataset.backdropPointer = event.target === backdrop ? "outside" : "inside"; }); backdrop.addEventListener("click", event => { const started = backdrop.dataset.backdropPointer; delete backdrop.dataset.backdropPointer; if (event.target === backdrop && started === "outside") closeModal(backdrop); }); });
-  document.addEventListener("keydown", event => { if (event.key === "Escape" && activeModal) closeModal(); });
+  document.addEventListener("keydown", event => { if (event.key === "Escape" && activeModal) { event.preventDefault(); closeModal(); return; } if (event.key === "Tab" && activeModal) { const focusable = modalFocusables(activeModal); if (!focusable.length) return; const first = focusable[0], last = focusable[focusable.length - 1]; if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } } });
   if (new URLSearchParams(location.search).has("test")) {
     const testApi = {
       reset: () => { state = newPolicy(); render(); return JSON.parse(JSON.stringify(state)); },

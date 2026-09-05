@@ -10,6 +10,9 @@ const required = [
   "styles.css",
   "app.js",
   "wdac.js",
+  "compatibility.js",
+  "wdac-page.js",
+  "wdac-ui.html",
   ".github/workflows/pages.yml",
   "analysis-worker.js",
   "sw.js",
@@ -52,7 +55,8 @@ assert.match(index, /Content-Security-Policy/);
 assert.match(index, /connect-src 'none'/);
 assert.doesNotMatch(index, /(?:src|href)=["']https?:\/\//i);
 assert.match(app, /parseXmlFidelity/);
-assert.ok(index.includes("wdac.js"));
+assert.doesNotMatch(index, /<script src="wdac\.js"><\/script>/);
+assert.match(index, /href="wdac-ui\.html">WDAC/);
 assert.match(wdac, /WDAC_SIGNER_ECC_UNSUPPORTED/);
 assert.match(wdac, /WDAC_KERNEL_PATH_UNSUPPORTED/);
 assert.match(wdac, /localStorage/);
