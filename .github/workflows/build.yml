@@ -36,7 +36,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p dist/applocker-policy-studio
-          cp index.html styles.css app.js analysis-worker.js sw.js manifest.webmanifest .nojekyll dist/applocker-policy-studio/
+          cp index.html styles.css app.js wdac.js wdac-ui.html analysis-worker.js sw.js manifest.webmanifest .nojekyll dist/applocker-policy-studio/
       - name: Create ZIP
         shell: bash
         run: |

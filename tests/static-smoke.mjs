@@ -9,6 +9,8 @@ const required = [
   "index.html",
   "styles.css",
   "app.js",
+  "wdac.js",
+  ".github/workflows/pages.yml",
   "analysis-worker.js",
   "sw.js",
   "manifest.webmanifest",
@@ -27,9 +29,10 @@ const required = [
 ];
 for (const file of required) await access(join(root, file));
 
-const [index, app, worker, manifest, harness, roundtripFixture, msiFixture, dllFixture, scriptFixture, compatibilityFixture, truncatedFixture, appxFixture] = await Promise.all([
+const [index, app, wdac, worker, manifest, harness, roundtripFixture, msiFixture, dllFixture, scriptFixture, compatibilityFixture, truncatedFixture, appxFixture] = await Promise.all([
   readFile(join(root, "index.html"), "utf8"),
   readFile(join(root, "app.js"), "utf8"),
+  readFile(join(root, "wdac.js"), "utf8"),
   readFile(join(root, "analysis-worker.js"), "utf8"),
   readFile(join(root, "manifest.webmanifest"), "utf8"),
   readFile(join(root, "tests/e2e-harness.js"), "utf8"),
@@ -49,6 +52,10 @@ assert.match(index, /Content-Security-Policy/);
 assert.match(index, /connect-src 'none'/);
 assert.doesNotMatch(index, /(?:src|href)=["']https?:\/\//i);
 assert.match(app, /parseXmlFidelity/);
+assert.ok(index.includes("wdac.js"));
+assert.match(wdac, /WDAC_SIGNER_ECC_UNSUPPORTED/);
+assert.match(wdac, /WDAC_KERNEL_PATH_UNSUPPORTED/);
+assert.match(wdac, /localStorage/);
 assert.match(app, /serializePolicyFidelity/);
 assert.match(app, /openReviewFidelity/);
 assert.match(app, /RuleCollectionExtensions/);

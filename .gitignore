@@ -2,6 +2,7 @@
 node_modules/
 dist/
 build/
+site/
 *.zip
 *.tar.gz
 npm-debug.log*
@@ -9,6 +10,18 @@ yarn-debug.log*
 pnpm-debug.log*
 coverage/
 .vite/
+.parcel-cache/
+.cache/
+
+# Generated policy exports and local evidence snapshots
+*.cip
+*.p7b
+*.bin
+*.evtx
+*.reg
+policy-export*.xml
+wdac-export*.xml
+evidence-library*.json
 
 # Local development state
 *.log
@@ -24,9 +37,25 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.json
 *.swp
+*.swo
+*.code-workspace
+
+# Windows and shell metadata
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.history/
 
 # Temporary test artifacts
 test-results/
 playwright-report/
+playwright/.cache/
 tmp/
 temp/
+.eslintcache
+.stylelintcache
+
+# Local static-server and browser test state
+.local/
+.server/
+screenshots/

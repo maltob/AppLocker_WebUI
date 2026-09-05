@@ -278,6 +278,12 @@
     var type = panel.querySelector('#wdac-rule-type');
     var list = panel.querySelector('#wdac-attribute-list');    window.__policyStudioWdacAddEvidence = function (evidence, requestedType) {
       var pe = evidence && evidence.pe || {};
+      if (requestedType === 'hash') {
+        if (!evidence || !evidence.appLockerHash) { setStatus('Blocked: this evidence has no reusable hash.', true); return false; }
+        state.rules.push({ id: 'ID_ALLOW_HASH_' + Date.now().toString(36), type: RULE_TYPES.HASH, name: evidence.name + ' hash', hash: evidence.appLockerHash, scenario: 'user' });
+        sync(); setStatus('Hash rule reused from the local evidence library.', false); return true;
+      }
+
       var certificates = evidence && evidence.signature && evidence.signature.certificates || [];
       if (requestedType === 'signer') {
         var cert = certificates.find(function (item) { var c = window.WdacPolicy.classifyCertificate(item); return c.kind === 'rsa' && c.supported; }) || certificates[0];
@@ -384,4 +390,83 @@
       actions.appendChild(signerButton);
     }
   });
+}());
+
+(function () {
+  'use strict';
+  var KEY = 'policyStudio.evidenceLibrary.v1';
+  function escapeHtml(value) { return String(value == null ? '' : value).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function load() {
+    try { var value = JSON.parse(localStorage.getItem(KEY) || '[]'); return Array.isArray(value) ? value : []; } catch (_) { return []; }
+  }
+  function save(items) {
+    try { localStorage.setItem(KEY, JSON.stringify(items.slice(0, 100))); return true; } catch (_) { return false; }
+  }
+  function classify(result) {
+    var pe = result.pe || {};
+    var certs = result.signature && result.signature.certificates || [];
+    var types = [];
+    if (result.appLockerHash) types.push('hash');
+    if (result.pe && (pe.OriginalFilename || pe.OriginalFileName || result.name)) types.push('file-attribute');
+    if (certs.length) {
+      types.push('file-publisher', 'leaf-certificate', 'pca-certificate');
+      if (certs.some(function (cert) { var c = window.WdacPolicy.classifyCertificate(cert); return c.kind === 'rsa' && c.supported; })) types.push('RSA signer');
+      if (certs.some(function (cert) { return window.WdacPolicy.classifyCertificate(cert).kind === 'ecc'; })) types.push('ECC signer blocked');
+    }
+    if (result.msi && result.msi.detected) types.push('MSI metadata');
+    if (result.script && result.script.detected) types.push('script metadata');
+    if (result.appx) types.push('AppX/MSIX metadata');
+    return types;
+  }
+  function toEntry(result) {
+    var pe = result.pe || {};
+    return { id: result.wholeFileSha256 || result.appLockerHash || (result.name + ':' + result.size), name: result.name, size: result.size, fileType: result.fileType || 'unknown', seenAt: new Date().toISOString(), wholeFileSha256: result.wholeFileSha256 || '', appLockerHash: result.appLockerHash || '', hashBasis: result.hashBasis || '', matchingTypes: classify(result), pe: { OriginalFilename: pe.OriginalFilename || pe.OriginalFileName || '', InternalName: pe.InternalName || '', ProductName: pe.ProductName || '', FileDescription: pe.FileDescription || '', FileVersion: pe.FileVersion || '' }, msi: result.msi ? { title: result.msi.title || '', productName: result.msi.productName || '', company: result.msi.company || '' } : null, script: result.script ? { type: result.script.type || '', encoding: result.script.encoding || '', signatureStatus: result.script.signatureStatus || '' } : null, appx: result.appx ? { name: result.appx.name || result.appx.displayName || '', publisher: result.appx.publisher || '', version: result.appx.version || '' } : null, signature: result.signature ? { certificates: (result.signature.certificates || []).map(function (cert) { return { subject: cert.subject || '', issuer: cert.issuer || '', thumbprint: cert.thumbprint || '', tbsHash: cert.tbsHash || '', publicKeyAlgorithm: cert.publicKeyAlgorithm || cert.algorithm || '', keySize: cert.keySize || 0 }; }) } : { certificates: [] } };
+  }
+  function installLibrary() {
+    var panel = document.querySelector('.wdac-panel');
+    if (!panel || panel.dataset.libraryInstalled === 'true' || !window.WdacPolicy) return;
+    var controls = panel.querySelector('#wdac-controls');
+    if (!controls) return;
+    panel.dataset.libraryInstalled = 'true';
+    var section = document.createElement('section');
+    section.className = 'wdac-library';
+    section.setAttribute('aria-labelledby', 'wdac-library-title');
+    section.innerHTML = '<div class="wdac-library-header"><div><h3 id="wdac-library-title">Local evidence library</h3><p class="muted">Metadata only—selected file bytes are never stored. Reuse previously analyzed files across policies.</p></div><button type="button" class="text-button" id="wdac-library-clear">Clear library</button></div><div id="wdac-library-list" aria-live="polite"></div>';
+    controls.appendChild(section);
+    var list = section.querySelector('#wdac-library-list');
+    function render() {
+      var items = load();
+      if (!items.length) { list.innerHTML = '<p class="muted">No analyzed files saved yet. Analyze a file to add its metadata here.</p>'; return; }
+      list.innerHTML = items.map(function (item) {
+        var kinds = (item.matchingTypes || []).map(function (kind) { return '<span class="wdac-tag">' + escapeHtml(kind) + '</span>'; }).join('');
+        var actions = '';
+        if (item.appLockerHash) actions += '<button type="button" class="text-button" data-library-action="hash" data-library-id="' + encodeURIComponent(item.id) + '">Reuse hash</button>';
+        if (item.pe && item.pe.OriginalFilename) actions += '<button type="button" class="text-button" data-library-action="attribute" data-library-id="' + encodeURIComponent(item.id) + '">Reuse attributes</button>';
+        if (item.signature && item.signature.certificates && item.signature.certificates.length) actions += '<button type="button" class="text-button" data-library-action="signer" data-library-id="' + encodeURIComponent(item.id) + '">Reuse RSA signer</button>';
+        return '<article class="wdac-library-item"><div><strong>' + escapeHtml(item.name) + '</strong><small>' + escapeHtml(item.fileType) + ' · ' + Math.max(0, Math.round((item.size || 0) / 1024)) + ' KB</small><div class="wdac-tags">' + kinds + '</div></div><div class="wdac-library-actions">' + actions + '</div></article>';
+      }).join('');
+      list.querySelectorAll('[data-library-action]').forEach(function (button) {
+        button.addEventListener('click', function () {
+          var item = items.find(function (entry) { return entry.id === decodeURIComponent(button.dataset.libraryId); });
+          if (!item || !window.__policyStudioWdacAddEvidence) return;
+          var engine = panel.querySelector('#wdac-engine'); if (engine) { engine.value = 'wdac'; engine.dispatchEvent(new Event('change')); }
+          window.__policyStudioWdacAddEvidence(item, button.dataset.libraryAction);
+        });
+      });
+    }
+    panel.querySelector('#wdac-library-clear').addEventListener('click', function () { if (window.confirm('Clear the local evidence library?')) { try { localStorage.removeItem(KEY); } catch (_) {} render(); } });
+    window.addEventListener('policy-studio:evidence', function (event) {
+      var detail = event.detail || {}, result = detail.result || detail;
+      var entry = toEntry(result), items = load(), existing = items.findIndex(function (item) { return item.id === entry.id; });
+      if (existing >= 0) items.splice(existing, 1);
+      items.unshift(entry);
+      if (!save(items)) {
+        var status = panel.querySelector('#wdac-status');
+        if (status) status.textContent = 'Local storage is unavailable; this browser session cannot retain the evidence library.';
+      }
+      render();
+    });
+    render();
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', installLibrary); else installLibrary();
 }());
