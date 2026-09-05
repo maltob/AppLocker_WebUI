@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Policy Studio · WDAC</title>
+  <style>
+    :root{font-family:system-ui,sans-serif;color:#17202a;background:#f5f7fa}body{max-width:900px;margin:0 auto;padding:2rem}main{background:#fff;border:1px solid #d9e0e8;border-radius:14px;padding:2rem;box-shadow:0 8px 30px #17202a14}.eyebrow{font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;color:#52657a}h1{margin:.25rem 0}.muted{color:#52657a}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem;margin:2rem 0}.field{display:grid;gap:.4rem;font-weight:600}.field select,.field input{font:inherit;padding:.65rem;border:1px solid #aebdcb;border-radius:8px;background:#fff}.callout{padding:1rem;border-left:4px solid #d28a00;background:#fff7e5;border-radius:6px}.hidden{display:none}@media(prefers-color-scheme:dark){:root{color:#eef3f8;background:#111820}main{background:#19232e;border-color:#344454}.muted{color:#b7c6d4}.field select,.field input{background:#111820;color:inherit;border-color:#52657a}.callout{background:#3b301d}}
+  </style>
+</head>
+<body>
+  <main data-policy-engine>
+    <p class="eyebrow">Policy Studio</p>
+    <h1>WDAC / App Control policy</h1>
+    <p class="muted">Build a device-wide policy from locally analysed evidence. Nothing is uploaded.</p>
+    <div class="grid">
+      <label class="field" for="engine">Policy engine<select id="engine"><option>WDAC / App Control</option><option>AppLocker</option></select></label>
+      <label class="field" for="scope">Scope<select id="scope"><option value="user-and-kernel">User mode + kernel</option><option value="kernel-only">Kernel only</option></select></label>
+      <label class="field" for="mode">Mode<select id="mode"><option value="audit">Audit (recommended)</option><option value="enforce">Enforced</option></select></label>
+      <label class="field" for="rule">Rule type<select id="rule"><option value="hash">Hash</option><option value="file-attribute">File attributes</option><option value="file-publisher">File publisher</option><option value="leaf-certificate">Leaf certificate</option><option value="pca-certificate">PCA certificate</option><option value="file-path">User-mode file path</option></select></label>
+    </div>
+    <div class="callout" role="status" aria-live="polite"><strong>Safety checks enabled.</strong><div id="status">File attributes are supported; signer and kernel-path compatibility is checked before export.</div></div>
+  </main>
+  <script src="wdac.js"></script>
+  <script>
+    const scope=document.querySelector('#scope'), rule=document.querySelector('#rule'), status=document.querySelector('#status');
+    function refresh(){status.textContent=scope.value==='kernel-only'&&rule.value==='file-path'?'Blocked: FilePath rules cannot authorize kernel-mode drivers.':'File attributes are supported; signer and kernel-path compatibility is checked before export.';}
+    scope.addEventListener('change',refresh);rule.addEventListener('change',refresh);refresh();
+  </script>
+</body>
+</html>

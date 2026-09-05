@@ -110,7 +110,7 @@
           <div class="field"><label for="ruleDescription">Description</label><textarea id="ruleDescription" name="description" rows="2" maxlength="300" placeholder="Why does this rule exist?"></textarea></div>
           <div class="form-grid two-up">
             <div class="field"><label for="ruleKind">Condition</label><select id="ruleKind" name="kind"><option value="path">File path</option><option value="hash">File hash</option><option value="publisher">Publisher</option></select></div>
-            <div class="field"><label for="ruleSid">User or group SID</label><input id="ruleSid" name="sid" value="S-1-1-0" placeholder="S-1-1-0" /></div>
+            <div class="field"><label for="ruleSid">User or group SID</label><input id="ruleSid" name="sid" list="knownSidOptions" value="S-1-1-0" placeholder="S-1-1-0" /><datalist id="knownSidOptions"><option value="S-1-1-0" label="Everyone"></option><option value="S-1-5-11" label="Authenticated Users"></option><option value="S-1-5-32-544" label="Administrators"></option><option value="S-1-5-32-545" label="Users"></option><option value="S-1-5-18" label="Local System"></option><option value="S-1-5-19" label="Local Service"></option><option value="S-1-5-20" label="Network Service"></option></datalist><small class="muted" id="sidHint">Everyone · applies to all users and groups.</small><details class="sid-help"><summary>Known SID hints</summary><div class="sid-help-list"><button type="button" data-known-sid="S-1-1-0"><strong>Everyone</strong><code>S-1-1-0</code></button><button type="button" data-known-sid="S-1-5-11"><strong>Authenticated Users</strong><code>S-1-5-11</code></button><button type="button" data-known-sid="S-1-5-32-544"><strong>Administrators</strong><code>S-1-5-32-544</code></button><button type="button" data-known-sid="S-1-5-32-545"><strong>Users</strong><code>S-1-5-32-545</code></button><button type="button" data-known-sid="S-1-5-18"><strong>Local System</strong><code>S-1-5-18</code></button><button type="button" data-known-sid="S-1-5-19"><strong>Local Service</strong><code>S-1-5-19</code></button><button type="button" data-known-sid="S-1-5-20"><strong>Network Service</strong><code>S-1-5-20</code></button></div><p class="analysis-note">These are well-known SIDs. Domain and custom group SIDs still need to be entered explicitly.</p></details></div>
           </div>
           <fieldset class="condition-panel"><legend id="conditionLegend">Path condition</legend><div id="conditionFields"></div></fieldset>
           <div class="modal-footer"><button class="button button-quiet" data-close-modal type="button">Cancel</button><button class="button button-primary" type="submit">Save rule</button></div>
@@ -182,6 +182,7 @@
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
-    <script src="app.js?v=18"></script>
-  </body>
+    <script src="app.js?v=19"></script>
+    <script src="wdac.js"></script>
+</body>
 </html>

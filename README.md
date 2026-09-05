@@ -1,6 +1,6 @@
 # Policy Studio
 
-Policy Studio is a browser-only AppLocker XML authoring tool. It has no backend, does not upload selected files, and stores drafts in the browser's local storage.
+Policy Studio is a browser-only AppLocker and WDAC/App Control XML authoring tool. It has no backend, does not upload selected files, and stores drafts in the browser's local storage.
 
 ## Run locally
 
@@ -58,6 +58,9 @@ These checks are intentionally advisory. The browser does not enforce policy, ve
 - Publisher rules are proposals for review. Product, binary, and version values come from PE version resources when available.
 - AppX/MSIX analysis reads the ZIP package manifest locally and can propose publisher rules from the package identity; package trust and catalog signatures are not verified.
 - AppLocker-compatible hashes must be validated against Windows-generated fixtures before production enforcement.
+- WDAC signer rules require supported RSA certificates (ECC/ECDSA signer rules are blocked); use a hash or file-attribute rule for ECC-only binaries.
+- WDAC FilePath rules apply only to user-mode binaries; kernel-mode drivers require an appropriate hash, signer, or WHQL rule.
+- WDAC XML export is source XML. Convert it with Windows tooling such as ConvertFrom-CIPolicy and validate it before deployment.
 - File analysis uses a dedicated browser worker for whole-file SHA-256 work when workers are available; it falls back to Web Crypto if a worker cannot start.
 - The policy review dialog can download a versioned JSON validation report alongside the XML export.
 

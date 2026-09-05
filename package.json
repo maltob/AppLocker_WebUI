@@ -4,6 +4,6 @@
   "private": true,
   "description": "Browser-only AppLocker XML policy authoring tool",
   "scripts": {
-    "test": "node tests/static-smoke.mjs"
+    "test": "node tests/static-smoke.mjs && node tests/wdac-smoke.mjs"
   }
 }

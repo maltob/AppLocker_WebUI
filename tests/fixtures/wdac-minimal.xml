@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SiPolicy xmlns="urn:schemas-microsoft-com:sipolicy">
+  <VersionEx>1.0.0.0</VersionEx>
+  <PolicyID>{11111111-1111-1111-1111-111111111111}</PolicyID>
+  <BasePolicyID>{11111111-1111-1111-1111-111111111111}</BasePolicyID>
+  <Rules>
+    <Rule><Option>Enabled:Audit Mode</Option></Rule>
+    <Rule><Option>Enabled:UMCI</Option></Rule>
+  </Rules>
+  <FileRules>
+    <FileAttrib ID="ID_FILEATTRIB_DEMO" FriendlyName="Demo attribute" FileName="Contoso.exe" ProductName="Contoso Tools" MinimumFileVersion="1.0.0.0" />
+  </FileRules>
+  <Signers />
+  <SigningScenarios>
+    <SigningScenario Value="12" ID="ID_SIGNINGSCENARIO_USERMODE">
+      <ProductSigners><FileRulesRef><FileRuleRef RuleID="ID_FILEATTRIB_DEMO" /></FileRulesRef></ProductSigners>
+    </SigningScenario>
+    <SigningScenario Value="131" ID="ID_SIGNINGSCENARIO_KERNELMODE"><ProductSigners /></SigningScenario>
+  </SigningScenarios>
+</SiPolicy>
