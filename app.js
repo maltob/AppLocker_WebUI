@@ -26,6 +26,7 @@
   let pendingRuleProvenance = null;
   let toastTimer;
   let state = newPolicy();
+  window.__policyStudioGetState = () => state;
 
   function newPolicy() {
     return { name: "Untitled policy", version: "1", selectedCollection: "Exe", collections: { Exe: { mode: "AuditOnly", rules: [], extensionsXml: "" } }, importIssues: [], policyExtensionsXml: "" };
@@ -79,7 +80,7 @@
     const baselineWarnings = (state.importIssues?.length || 0) + (current.mode === "Enabled" ? 1 : 0) + (!allRules ? 1 : 0); $("warningCount").textContent = String(baselineWarnings);
     $("visibleRuleCount").textContent = `${current.rules.length} ${current.rules.length === 1 ? "rule" : "rules"}`;
     $("appliesTo").textContent = current.rules[0]?.sid === "S-1-5-32-544" ? "Administrators" : "Everyone";
-    renderCollections(); renderRules();
+    renderCollections(); renderRules(); window.dispatchEvent(new CustomEvent("policy-studio:policy-change"));
     $("reviewText").textContent = allRules ? `${allRules} rule${allRules === 1 ? "" : "s"} across ${Object.keys(state.collections).length} collection${Object.keys(state.collections).length === 1 ? "" : "s"}.` : "Add a rule to start building this collection.";
     $("auditNotice").hidden = current.mode === "Enabled" || sessionStorage.getItem("auditNoticeDismissed") === "true";
   }
@@ -141,13 +142,14 @@
     if (!result.appLockerHash) return showToast("No AppLocker-compatible hash is available");
     const type = targetCollectionForFile(result); const collection = ensureCollection(type);
     const hashLabel = result.script ? "browser-computed whole-file SHA-256 candidate" : "browser-computed Authenticode hash candidate";
-    const rule = { id: uid(), name: `Allow ${result.name}`, description: `Hash rule proposed from local analysis of ${result.name} (${hashLabel}).`, action: "Allow", sid: DEFAULT_SID, kind: "hash", compatibility: result.compatibility || "unverified", provenance: { source: "local-analysis", fileName: result.name, hashBasis: result.hashBasis || hashLabel, compatibility: result.compatibility || "unverified", signer: result.signature?.certificates?.[0]?.subject || null }, condition: { data: result.appLockerHash, file: result.name, length: result.size }, exceptions: [] };
+    const rule = { id: uid(), ...(window.PolicyRuleCompatibility?.shared(result, "hash") || {}), name: `Allow ${result.name}`, description: `Hash rule proposed from local analysis of ${result.name} (${hashLabel}).`, action: "Allow", sid: DEFAULT_SID, kind: "hash", compatibility: result.compatibility || "unverified", provenance: { source: "local-analysis", fileName: result.name, hashBasis: result.hashBasis || hashLabel, compatibility: result.compatibility || "unverified", signer: result.signature?.certificates?.[0]?.subject || null }, condition: { data: result.appLockerHash, file: result.name, length: result.size }, exceptions: [] };
+    if (window.PolicyRuleCompatibility) Object.assign(rule, window.PolicyRuleCompatibility.shared(result, "hash"));
     collection.rules.push(rule); markDirty(); render(); closeModal($("analysisModal")); showToast(`Hash rule added to ${collectionDef(type).label}`);
   }
   function addPublisherRuleFromFile(result) {
     const certificates = result.signature?.certificates || []; const issuers = new Set(certificates.map(c => c.issuer)); const signer = certificates.find(c => !issuers.has(c.subject)) || certificates[0]; const publisher = result.appx?.publisher || signer?.subject; if (!publisher) return showToast("No signing publisher is available");
    const version = result.pe || {}; const appx = result.appx || {}; const type = targetCollectionForFile(result); ensureCollection(type); closeModal($("analysisModal"));
-    pendingRuleProvenance = { source: "local-analysis", fileName: result.name, hashBasis: "publisher metadata", compatibility: result.compatibility || "unverified", signer: publisher };
+    pendingRuleProvenance = { ...((window.PolicyRuleCompatibility?.shared(result, "publisher")) || {}), source: "local-analysis", fileName: result.name, hashBasis: "publisher metadata", compatibility: result.compatibility || "unverified", signer: publisher };
     openRuleModal(null, { kind: "publisher", name: `Allow ${result.name} publisher`, description: `Publisher rule proposed from browser-parsed metadata for ${result.name}.`, condition: { publisher, product: appx.name || appx.displayName || version.ProductName || "*", binary: appx.name ? "*" : (version.OriginalFilename || result.name), lowVersion: appx.version || (version.FileVersion ? normalizeVersion(version.FileVersion) : "0.0.0.0"), highVersion: "*" } });
   }
 

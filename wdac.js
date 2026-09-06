@@ -286,6 +286,7 @@
       if (requestedType === 'hash') {
         if (!evidence || !evidence.appLockerHash) { setStatus('Blocked: this evidence has no reusable hash.', true); return false; }
         state.rules.push({ id: 'ID_ALLOW_HASH_' + Date.now().toString(36), type: RULE_TYPES.HASH, name: evidence.name + ' hash', hash: evidence.appLockerHash, scenario: 'user' });
+        if (window.PolicyRuleCompatibility) Object.assign(state.rules[state.rules.length - 1], window.PolicyRuleCompatibility.shared(evidence, 'hash'));
         sync(); setStatus('Hash rule reused from the local evidence library.', false); return true;
       }
 
@@ -307,6 +308,8 @@
       status.parentElement.classList.toggle('wdac-error', Boolean(error));
     }
     function sync() {
+      window.dispatchEvent(new CustomEvent('policy-studio:wdac-change'));
+      try { sessionStorage.setItem('policyStudio.wdac.session', JSON.stringify(state)); } catch (_) {}
       state.scope = scope.value;
       state.mode = mode.value;
       list.innerHTML = state.fileAttributes.length ? state.fileAttributes.map(function (item, index) {

@@ -12,6 +12,7 @@ const required = [
   "wdac.js",
   "compatibility.js",
   "wdac-page.js",
+  "rule-compatibility.js",
   "wdac-ui.html",
   ".github/workflows/pages.yml",
   "analysis-worker.js",
@@ -93,6 +94,7 @@ assert.equal(JSON.parse(compatibilityFixture).entries.every(entry => entry.statu
 assert.equal(JSON.parse(truncatedFixture).expectedHash, null);
 assert.match(appxFixture, /__appxFixture/);
 assert.match(app, /parseAppxPackage/);
+assert.match(await readFile(join(root, "rule-compatibility.js"), "utf8"), /PolicyRuleCompatibility/);
 
 await new Promise((resolve, reject) => {
   const child = spawn(process.execPath, ["--check", join(root, "app.js")], { stdio: "inherit" });

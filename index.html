@@ -96,6 +96,10 @@
             <div class="wdac-library-header"><div><p class="eyebrow">Reusable evidence</p><h3 id="applocker-library-title">AppLocker library</h3><p class="muted">Build rules from files already analysed in this browser. Compatibility is shown for both policy engines.</p></div></div>
             <div id="sharedEvidenceLibrary" data-library-engine="applocker" aria-live="polite"></div>
           </section>
+          <section class="evidence-workspace" aria-labelledby="compatibility-dashboard-title">
+            <div class="wdac-library-header"><div><p class="eyebrow">Cross-engine review</p><h3 id="compatibility-dashboard-title">AppLocker ↔ WDAC compatibility</h3><p class="muted">Review shared rules, missing equivalents, and unsafe differences before deployment.</p></div></div>
+            <div id="compatibilityDashboard" aria-live="polite"></div>
+          </section>
 
           <div class="review-card" id="reviewCard">
             <div class="review-icon" aria-hidden="true">✓</div>
@@ -190,6 +194,11 @@
 
     <div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
     <script src="compatibility.js"></script>
+    <script src="rule-compatibility.js"></script>
+    <script src="rule-compatibility.js"></script>
+    <script src="rule-compatibility.js"></script>
+    <script src="rule-compatibility.js"></script>
     <script src="app.js?v=20"></script>
+    <script src="compatibility-dashboard.js"></script>
 </body>
 </html>
